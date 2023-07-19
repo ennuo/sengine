@@ -1,64 +1,53 @@
-cmake_minimum_required(VERSION 3.22)
-set(CMAKE_CXX_STANDARD 20)
+cmake_minimum_required(VERSION 3.25.2)
 project(sengine VERSION 1.0.0 DESCRIPTION "taking a mean shit right now!")
 
-include(GNUInstallDirs)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/bin> CACHE INTERNAL "")
 
-# source files
-file(GLOB_RECURSE SENGINE_SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp" "${PROJECT_SOURCE_DIR}/src/*.c")
-file(GLOB_RECURSE SENGINE_INCLUDE_FILES "${PROJECT_SOURCE_DIR}/include/*.h")
-add_library(${PROJECT_NAME} SHARED ${SENGINE_SRC_FILES} ${SENGINE_INCLUDE_FILES})
+# Create library and include source files
+file(GLOB_RECURSE SENGINE_SRC "./src/**.cpp" "./src/**.c")
+file(GLOB_RECURSE SENGINE_INCLUDE "./include/**.h")
+add_library(${PROJECT_NAME} STATIC ${SENGINE_SRC} ${SENGINE_INCLUDE})
+target_include_directories(${PROJECT_NAME} PUBLIC include third_party)
 
-target_include_directories(${PROJECT_NAME} PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-        )
-
-set_target_properties(${PROJECT_NAME} PROPERTIES
-        VERSION "${PROJECT_VERSION}"
-        SOVERSION "${PROJECT_VERSION_MAJOR}"
-        PUBLIC_HEADER "${SENGINE_INCLUDE_FILES}"
-        )
-
-# packages
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2IMAGE_INCLUDE_DIRS})
-
-set(SENGINE_PACKAGE_LINKER_FLAGS SDL2::SDL2main SDL2::SDL2 SDL2_image::SDL2_image)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SENGINE_PACKAGE_LINKER_FLAGS})
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE --static -static-libstdc++ -static-libgcc -lmingw32 ${SENGINE_PACKAGE_LINKER_FLAGS})
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE -mconsole)
+if (NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "Release")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	add_compile_definitions(SENGINE_DEBUG)
+	if (MINGW)
+		target_link_libraries(${PROJECT_NAME} PRIVATE -mconsole)
+	endif()
 endif()
 
-# thirdparty
+# MSVC is annoying about strcpy and such
+if (MSVC)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
+# SDL
+if (MSVC)
+	target_include_directories(${PROJECT_NAME} PUBLIC thirdparty/sdl/include)
+	target_link_libraries(${PROJECT_NAME} PUBLIC SDL2main SDL2)
+	if (CMAKE_CL_64)
+		target_link_directories(${PROJECT_NAME} PUBLIC 
+			"${PROJECT_SOURCE_DIR}/thirdparty/sdl/lib/x64"
+		)
+	else()
+		target_link_directories(${PROJECT_NAME} PUBLIC 
+			"${PROJECT_SOURCE_DIR}/thirdparty/sdl/lib/x86"
+		)
+	endif()
+else()
+	find_package(SDL2 REQUIRED)
+	target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_INCLUDE_DIRS})
+	target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_LIBRARIES})
+endif()
+
+# Include any thirdparty libraries that the engine depends on
 add_subdirectory(thirdparty)
-target_include_directories(${PROJECT_NAME} PUBLIC thirdparty)
-target_link_libraries(${PROJECT_NAME} PUBLIC assimp glm stb glad EnTT crossguid nfd imgui 3rdparty_zlib fmt easyloggingpp) #backward
+target_link_libraries(${PROJECT_NAME} PUBLIC thirdparty)
 
-# build commands
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E rm -R -f
-        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/resources)
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_SOURCE_DIR}/datafiles"
-        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>)
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/datafiles"
-        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>)
-
-# install
-install(TARGETS ${PROJECT_NAME}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        )
+# Any additional post-build scripts
+include(CopyDatafiles)
