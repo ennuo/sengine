@@ -58,14 +58,18 @@ namespace core {
 #pragma region init
 
     void Engine::InitSdl() {
-        SDL_CreateWindowAndRenderer(windowWidth, windowHeight, (SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL), &window, &renderer);
-        if ((window == nullptr) || (renderer == nullptr)) core::Log::Critical("Engine::Initialize failed (window or renderer was null)");
+        if (SDL_Init(SDL_INIT_VIDEO) < 0)
+            core::Log::Critical("Engine::Initialize failed (Unable to initialize SDL)");
 
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
+
+        SDL_CreateWindowAndRenderer(windowWidth, windowHeight, (SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL), &window, &renderer);
+        if ((window == nullptr) || (renderer == nullptr)) core::Log::Critical("Engine::Initialize failed (window or renderer was null)");
+
 
         glContext = SDL_GL_CreateContext(window);
         if (glContext == nullptr) core::Log::Critical("Engine::Initialize failed (glContext was null)");
