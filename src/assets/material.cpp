@@ -21,8 +21,6 @@ namespace assets {
 
         file.read(reinterpret_cast<char *>(&flags), sizeof(u32));
 
-        AssetInfoGuid guid;
-        file.read(reinterpret_cast<char *>(&guid), sizeof(AssetInfoGuid));
 
 
 
@@ -37,14 +35,6 @@ namespace assets {
         file.open(filePath, std::ios::binary | std::ios::out | std::ios::trunc);
         WriteAssetInfo(file);
 
-
-        file.write(reinterpret_cast<const char *>(&flags), sizeof(u32));
-
-        file.write(reinterpret_cast<const char *>(shader != nullptr ? shader->GetGuid().bytes().data() : invalidGUID), sizeof(AssetInfoGuid));
-        for (const auto& texture : textures)
-        {
-            file.write(reinterpret_cast<const char *>(texture != nullptr ? texture->GetGuid().bytes().data() : invalidGUID), sizeof(AssetInfoGuid));
-        }
 
         file.close();
     }
