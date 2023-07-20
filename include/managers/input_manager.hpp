@@ -6,9 +6,9 @@
 #include <vector>
 #include <utility>
 #include <string>
+#include <glm/glm.hpp>
 
 #include "managers/manager.hpp"
-#include "structs/vector2.hpp"
 #include "enums/input/mouse_button.hpp"
 #include "enums/input/input_state.hpp"
 
@@ -23,7 +23,7 @@ namespace managers {
         void DefineInput(const std::string &inputName);
         void TrackInput(const std::string &inputName, int scanCode);
 
-        structs::Vector2 GetMousePosition();
+        glm::vec2 GetMousePosition();
 
         int GetMouseDown(enums::MouseButton mouseInput);
         int GetMousePressed(enums::MouseButton mouseInput);
@@ -46,7 +46,7 @@ namespace managers {
 
         std::map<std::string, std::vector<int>> keyMap;
 
-        structs::Vector2 mousePosition;
+        glm::vec2 mousePosition;
     };
 }
 

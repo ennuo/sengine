@@ -96,7 +96,7 @@ namespace managers {
         return GetMapState(state, enums::InputState::Released);
     }
 
-    structs::Vector2 InputManager::GetMousePosition() {
+    glm::vec2 InputManager::GetMousePosition() {
         return mousePosition;
     }
 

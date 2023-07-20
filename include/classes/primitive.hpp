@@ -1,10 +1,7 @@
 #ifndef SENGINE_ASSET_CREATOR_PRIMITIVE_HPP
 #define SENGINE_ASSET_CREATOR_PRIMITIVE_HPP
 
-#include <vector>
-#include <glad.h>
-
-#include "structs/vertex.hpp"
+#include "core/types.hpp"
 #include "classes/mesh.hpp"
 #include "structs/primitive_type.hpp"
 

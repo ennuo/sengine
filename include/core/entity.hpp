@@ -9,7 +9,6 @@
 #include <glm/glm.hpp>
 
 #include "components/component.hpp"
-#include "structs/vector3.hpp"
 
 typedef unsigned long EntityId;
 

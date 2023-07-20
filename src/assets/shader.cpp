@@ -154,7 +154,7 @@ namespace assets {
         program = 0;
 
         uniformData.clear();
-    };
+    }
 
     void Shader::FetchUniforms() {
         if (!ProgramExists()) return;

@@ -1,10 +1,23 @@
 #ifndef SENGINE_TEST1_TEXTURE1_H
 #define SENGINE_TEST1_TEXTURE1_H
 
-#include <glad.h>
+#include "core/types.hpp"
 
 #include "assets/asset.hpp"
 #include "structs/asset_info.hpp"
+
+namespace enums {
+    enum class TextureType
+    {
+        RGBA = 0
+    };
+
+    enum class TextureFlags
+    {
+        None = 0,
+        NoSRGB = 1
+    };
+}
 
 namespace assets {
     class Texture : public Asset {
@@ -12,19 +25,27 @@ namespace assets {
         Texture();
         ~Texture();
 
-        void Save(const std::string &filePath) override;
-        void Load(const std::string &filePath) override;
-        void LoadFromFile(const std::string &filePath);
+        void Save(const string &filePath) override;
+        void Load(const string &filePath) override;
+        void LoadFromFile(const string &filePath);
 
-        int width;
-        int height;
-        long long dataSize;
-        unsigned char *data;
+        inline s32 GetWrapU() const { return wrapU; }
+        inline s32 GetWrapV() const { return wrapV; }
+        inline GLuint GetTextureID() const { return textureId; }
 
-        GLuint textureId;
     private:
         void BindTexture();
         void Free();
+
+        s32 width, height;
+
+        s32 wrapU, wrapV;
+        u32 type, flags;
+
+        s64 dataSize;
+        unsigned char* data;
+
+        GLuint textureId;
     };
 }
 

@@ -1,26 +1,47 @@
-#include <cstddef>
-#include <utility>
-
 #include "core/engine.hpp"
-#include "structs/vertex.hpp"
 #include "classes/mesh.hpp"
 #include "assets/texture.hpp"
 #include "utils/asset_util.hpp"
 #include "managers/asset_manager.hpp"
 
+using structs::Vertex;
+using structs::Bone;
+using structs::SubMesh;
+using assets::Material;
+
 namespace classes {
-    Mesh::Mesh(std::vector<structs::Vertex> vertices, std::vector<GLuint> indices, std::vector<std::string> textureNames)
-        : vertices(std::move(vertices)), indices(std::move(indices)), textures(std::move(textures)), VAO(0), VBO(0), EBO(0) {
+    Mesh::Mesh(Vec<Vertex> vertices, Vec<GLuint> indices, Ref<Material> material) :
+    vertices(std::move(vertices)), indices(std::move(indices)), submeshes(),
+    VAO(0), VBO(0), EBO(0)
+    {
+        submeshes.emplace_back(
+            material,
+            0,
+            this->vertices.size(),
+            0,
+            this->indices.size(),
+            GL_TRIANGLES
+        );
+
         SetupMesh();
     }
 
-    Mesh::~Mesh() {
+    Mesh::Mesh(Vec<Vertex> vertices, Vec<GLuint> indices, Vec<SubMesh> submeshes) :
+    vertices(std::move(vertices)), indices(std::move(indices)), submeshes(std::move(submeshes)),
+    VAO(0), VBO(0), EBO(0)
+    {
+        SetupMesh();
+    }
+
+    Mesh::~Mesh()
+    {
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
     }
 
-    void Mesh::SetupMesh() {
+    void Mesh::SetupMesh()
+    {
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
@@ -50,20 +71,14 @@ namespace classes {
         glBindVertexArray(0);
     }
 
-    void Mesh::Draw() {
-        static auto assetManager = g_Engine->GetManager<managers::AssetManager>();
-
-        for (int i = 0; i < textures.size(); i++)
-        {
-            auto textureName = textures[i];
-            auto texture = assetManager->GetAssetOrDefault<assets::Texture>(textureName);
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, texture->textureId);
-        }
-
-        glActiveTexture(GL_TEXTURE0);
+    void Mesh::Draw()
+    {
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr);
+        for (const auto& submesh : submeshes)
+        {
+            submesh.material->Bind();
+            glDrawElements(submesh.primitiveType, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexStart * sizeof(GLuint)));
+        }
         glBindVertexArray(0);
     }
 }
