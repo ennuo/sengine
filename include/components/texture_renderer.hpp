@@ -1,8 +1,8 @@
 #ifndef SENGINE_ASSET_CREATOR_TEXTURE_RENDERER_HPP
 #define SENGINE_ASSET_CREATOR_TEXTURE_RENDERER_HPP
 
-#include <utility>
-
+#include "core/types.hpp"
+#include "classes/mesh.hpp"
 #include "components/component.hpp"
 #include "assets/texture.hpp"
 
@@ -10,15 +10,18 @@ namespace components {
     class TextureRenderer : public Component {
     public:
         TextureRenderer(EntityId entityId);
-        ~TextureRenderer();
 
-        void SetTexture(std::weak_ptr<assets::Texture> newTexture);
+        inline Ref<assets::Texture> GetTexture() const { return texture; }
+        inline Ref<assets::Material> GetMaterial() const { return material; }
 
-        void PostRender() override;
+        inline void SetMaterial(Ref<assets::Material> newMaterial) { material = std::move(newMaterial); }
+        inline void SetTexture(Ref<assets::Texture> newTexture) { texture = std::move(newTexture); }
+
+        void Render() override;
     private:
-        std::weak_ptr<assets::Texture> texture;
-
-        void RenderTexture();
+        Ref<assets::Texture> texture;
+        Ref<assets::Material> material;
+        classes::Mesh mesh;
     };
 }
 

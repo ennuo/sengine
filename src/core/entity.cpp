@@ -4,7 +4,7 @@
 namespace core {
     EntityId Entity::Id = 0;
 
-    Entity::Entity() : position({0, 0, 0}), id(Id++), frontVector(0.0f, 0.0f, -1.0f), upVector(0.0f, 1.0f, 0.0f) { }
+    Entity::Entity() : position({0, 0, 0}), scale(1.0f, 1.0f, 1.0f), id(Id++), frontVector(0.0f, 0.0f, -1.0f), upVector(0.0f, 1.0f, 0.0f) { }
     Entity::~Entity() { };
 
     void Entity::Move(const glm::vec2 &moveVector) {

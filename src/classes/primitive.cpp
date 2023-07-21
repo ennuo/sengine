@@ -1,6 +1,8 @@
 #include "classes/primitive.hpp"
 #include "assets/texture.hpp"
 #include "exceptions/not_implemented.hpp"
+#include "utils/asset_util.hpp"
+#include "managers/asset_manager.hpp"
 
 namespace classes {
     Primitive::Primitive(Vec<structs::Vertex> vertices, Vec<GLuint> indices) : vertices(std::move(vertices)), indices(std::move(indices)) { }
@@ -32,6 +34,7 @@ namespace classes {
     }
 
     classes::Mesh Primitive::GenerateMesh() {
-        return { vertices, indices, nullptr };
+        static auto assetManager = g_Engine->GetManager<managers::AssetManager>();
+        return { vertices, indices, assetManager->LoadDefaultAsset<assets::Material>() };
     }
 }

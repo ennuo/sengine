@@ -1,9 +1,7 @@
 #ifndef SENGINE_TEST1_MODEL_H
 #define SENGINE_TEST1_MODEL_H
 
-#include <vector>
-#include <utility>
-#include <assimp/scene.h>
+#include "core/types.hpp"
 
 #include "classes/mesh.hpp"
 #include "assets/shader.hpp"
@@ -13,16 +11,10 @@ namespace assets {
     public:
         Model();
 
-        void Save(const std::string &filePath) override;
-        void Load(const std::string &filePath) override;
-        void LoadFromFile(const std::string &filePath);
-
-        void Draw(std::weak_ptr<assets::Shader> shader);
-        void ProcessNode(const std::string &directory, aiNode *node);
-        classes::Mesh ProcessMesh(aiMesh *mesh);
+        void Save(const string &filePath) override;
+        void Load(const string &filePath) override;
     private:
-        std::vector<classes::Mesh> meshes;
-        const aiScene *scene;
+        classes::Mesh mesh;
     };
 }
 

@@ -21,24 +21,42 @@ namespace assets {
 
         file.read(reinterpret_cast<char *>(&flags), sizeof(u32));
 
+        Guid guid;
+        file.read(reinterpret_cast<char *>(&guid), sizeof(Guid));
+        if (guid.isValid())
+        {
+            shader = assetManager->LoadAsset<assets::Shader>(guid);
+        }
 
-
-
-
-        // ???
+        for (u32 index = 0; index < MAX_TEXTURES; ++index)
+        {
+            file.read(reinterpret_cast<char *>(&guid), sizeof(Guid));
+            if (guid.isValid())
+            {
+                textures[index] = assetManager->LoadAsset<assets::Texture>(guid);
+            }
+        }
     }
 
     void Material::Save(const string &filePath)
     {
-
         std::fstream file;
         file.open(filePath, std::ios::binary | std::ios::out | std::ios::trunc);
         WriteAssetInfo(file);
 
         file.write(reinterpret_cast<const char *>(&flags), sizeof(u32));
 
+        static Guid empty{};
+        Guid guid;
 
+        guid = shader != nullptr ? shader->GetGuid() : empty;
+        file.write(reinterpret_cast<const char *>(&guid), sizeof(Guid));
 
+        for (const auto& texture : textures)
+        {
+            guid = texture != nullptr ? texture->GetGuid() : empty;
+            file.write(reinterpret_cast<const char *>(&guid), sizeof(Guid));
+        }
 
         file.close();
     }
@@ -50,6 +68,8 @@ namespace assets {
             glUseProgram(0);
             return;
         }
+
+        glUseProgram(shader->GetProgram());
 
         for (u32 index = 0; index < MAX_TEXTURES; ++index)
         {

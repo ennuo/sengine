@@ -10,6 +10,12 @@ using structs::SubMesh;
 using assets::Material;
 
 namespace classes {
+    Mesh::Mesh() :
+    vertices(), indices(), submeshes(),
+    VAO(0), VBO(0), EBO(0)
+    {
+    }
+
     Mesh::Mesh(Vec<Vertex> vertices, Vec<GLuint> indices, Ref<Material> material) :
     vertices(std::move(vertices)), indices(std::move(indices)), submeshes(),
     VAO(0), VBO(0), EBO(0)
@@ -68,17 +74,6 @@ namespace classes {
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertexSize, (void*)offsetof(structs::Vertex, texCoords));
 
-        glBindVertexArray(0);
-    }
-
-    void Mesh::Draw()
-    {
-        glBindVertexArray(VAO);
-        for (const auto& submesh : submeshes)
-        {
-            submesh.material->Bind();
-            glDrawElements(submesh.primitiveType, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexStart * sizeof(GLuint)));
-        }
         glBindVertexArray(0);
     }
 }

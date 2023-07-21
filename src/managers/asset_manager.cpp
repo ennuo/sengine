@@ -6,31 +6,27 @@
 #include "managers/asset_manager.hpp"
 
 namespace managers {
-    AssetManager::AssetManager() : assets(), defaults() {
-        LoadDefaultAssets();
-    }
-
-    AssetManager::~AssetManager()
-    {
-//        std::unordered_map<Guid, AssetData>::iterator iterator;
-//        for (iterator = assets.begin(); iterator != assets.end(); ++iterator) {
-//            Guid guid = iterator->first;
-//            DeRegisterAsset(guid);
-//        }
-    }
+    AssetManager::AssetManager() : assets(), defaults() {}
 
     void AssetManager::LoadDefaultAssets()
     {
-        //LoadDefaultAsset<assets::Font>();
-        //LoadDefaultAsset<assets::Material>();
-        //LoadDefaultAsset<assets::Model>();
-        core::Log::Info("LOADING SHADER");
-        LoadDefaultAsset<assets::Shader>();
-        //LoadDefaultAsset<assets::Sound>();
-        core::Log::Info("LOADING TEXTURE");
-        LoadDefaultAsset<assets::Texture>();
         core::Log::Info("LOADING ASSET DATABASE");
         LoadDefaultAsset<assets::AssetDatabase>();
+
+        core::Log::Info("LOADING TEXTURE");
+        LoadDefaultAsset<assets::Texture>();
+
+        core::Log::Info("LOADING SHADER");
+        LoadDefaultAsset<assets::Shader>();
+
+        //core::Log::Info("LOADING FONT");
+        //LoadDefaultAsset<assets::Font>();
+
+        core::Log::Info("LOADING MATERIAL");
+        LoadDefaultAsset<assets::Material>();
+
+        //LoadDefaultAsset<assets::Model>();
+        //LoadDefaultAsset<assets::Sound>();
     }
 
     string AssetManager::GetAssetPath(const string &folderName, const string &name)
@@ -43,7 +39,19 @@ namespace managers {
 
     bool AssetManager::AssetExists(const Guid &guid)
     {
-        return assets.contains(guid);
+        if (assets.contains(guid))
+        {
+            auto& asset = assets[guid];
+            if (asset.ref.expired())
+            {
+                assets.erase(guid);
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     bool AssetManager::AssetExists(const string &path)
@@ -52,7 +60,15 @@ namespace managers {
         {
             auto& asset = pair.second;
             if (asset.path == path)
+            {
+                if (asset.ref.expired())
+                {
+                    assets.erase(asset.guid);
+                    return false;
+                }
+
                 return true;
+            }
         }
 
         return false;

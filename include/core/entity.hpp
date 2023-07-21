@@ -19,6 +19,7 @@ namespace core {
         virtual ~Entity();
 
         glm::vec3 position;
+        glm::vec3 scale;
 
         void Move(const glm::vec2 &moveVector);
         void Rotate(const glm::vec2 &rotationVector);

@@ -31,15 +31,6 @@ namespace managers {
         };
 
         AssetManager();
-        ~AssetManager();
-
-        inline void RemoveFromAssetList(const Guid &guid)
-        {
-            if (assets.erase(guid))
-            {
-                core::Log::Info(fmt::format("unloaded asset w/ guid \"{}\"", guid.str()));
-            }
-        }
 
         template<typename T>
         static string GetAssetPath(const string &name);

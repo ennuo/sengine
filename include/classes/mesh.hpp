@@ -46,17 +46,25 @@ namespace structs {
 namespace classes {
     class Mesh {
     public:
+        Mesh();
         Mesh(Vec<structs::Vertex> vertices, Vec<GLuint> indices, Ref<assets::Material> material);
         Mesh(Vec<structs::Vertex> vertices, Vec<GLuint> indices, Vec<structs::SubMesh> submeshes);
         ~Mesh();
 
-        void Draw();
+        inline Vec<structs::SubMesh> &GetSubmeshes() { return submeshes; }
+        inline Vec<structs::Vertex> &GetVertices() { return vertices; }
+        inline Vec<GLuint> &GetIndices() { return indices; }
+
+        inline GLuint GetVAO() const { return VAO; }
+
+        inline s32 GetVertexCount() const { return vertices.size(); }
+        inline s32 GetIndexCount() const { return indices.size(); }
     private:
         void SetupMesh();
 
+        Vec<structs::SubMesh> submeshes;
         Vec<structs::Vertex> vertices;
         Vec<GLuint> indices;
-        Vec<structs::SubMesh> submeshes;
 
         GLuint VAO;
         GLuint VBO;
