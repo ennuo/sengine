@@ -5,9 +5,9 @@
 #include "structs/primitive_type.hpp"
 
 namespace components {
-    TextureRenderer::TextureRenderer(EntityId id) : Component(),
-    mesh(classes::Primitive::GetMesh(structs::PrimitiveType::Plane))
+    TextureRenderer::TextureRenderer(EntityId id) : Component()
     {
+        model = classes::Primitive::GetModel(structs::PrimitiveType::Plane);
         FetchEntity(id);
     }
 
@@ -25,15 +25,15 @@ namespace components {
 
         mat4 translation = glm::translate(glm::mat4(1.0f), entity->position);
         mat4 scale = glm::scale(glm::mat4(1.0f), entity->scale);
-        auto perspective = glm::perspective(glm::radians(90.0f), static_cast<float>(g_Engine->GetWindowWidth()) / static_cast<float>(g_Engine->GetWindowHeight()), 0.1f, 30.0f);
+        auto perspective = glm::perspective(glm::radians(90.0f), static_cast<float>(g_Engine->GetWindowWidth()) / static_cast<float>(g_Engine->GetWindowHeight()), 0.1f, 3.0f);
 
         shader->SetUniform("u_modelMatrix", (translation * scale));
         shader->SetUniform("u_projection", perspective);
 
-        glBindVertexArray(mesh.GetVAO());
-        for (const auto& submesh : mesh.GetSubmeshes())
+        model->Bind();
+        for (const auto& mesh : model->GetMeshes())
         {
-            glDrawElements(submesh.primitiveType, submesh.indexCount, GL_UNSIGNED_INT, (void*)(submesh.indexStart * sizeof(GLuint)));
+            glDrawElements(mesh.primitiveType, mesh.indexCount, GL_UNSIGNED_SHORT, (void*)(mesh.indexStart * sizeof(GLuint)));
         }
 
         glBindVertexArray(0);

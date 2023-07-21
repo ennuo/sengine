@@ -5,9 +5,9 @@
 #include "managers/asset_manager.hpp"
 
 namespace classes {
-    Primitive::Primitive(Vec<structs::Vertex> vertices, Vec<GLuint> indices) : vertices(std::move(vertices)), indices(std::move(indices)) { }
+    Primitive::Primitive(Vec<structs::Vertex> vertices, Vec<GLushort> indices) : vertices(std::move(vertices)), indices(std::move(indices)) { }
 
-    Mesh Primitive::GetMesh(const structs::PrimitiveType &primitiveType) {
+    Ref<assets::Model> Primitive::GetModel(const structs::PrimitiveType &primitiveType) {
         switch (primitiveType) {
             case structs::PrimitiveType::Plane: {
                 static Vec<structs::Vertex> vertices = {
@@ -17,24 +17,24 @@ namespace classes {
                         {{ 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }}, // top left
                 };
 
-                static Vec<GLuint> indices = {
+                static Vec<GLushort> indices = {
                         2, 0, 1,
                         3, 2, 1
                 };
 
                 static Primitive plane = Primitive(vertices, indices);
-                static Mesh mesh = plane.GenerateMesh();
-                return mesh;
+                static Ref<assets::Model> model = plane.GenerateModel();
+                return model;
             }
 
             default: {
-                throw exceptions::NotImplemented("Primitive::GetMesh");
+                throw exceptions::NotImplemented("Primitive::GetModel");
             }
         }
     }
 
-    classes::Mesh Primitive::GenerateMesh() {
+    Ref<assets::Model> Primitive::GenerateModel() {
         static auto assetManager = g_Engine->GetManager<managers::AssetManager>();
-        return { vertices, indices, assetManager->LoadDefaultAsset<assets::Material>() };
+        return std::make_shared<assets::Model>( vertices, indices, assetManager->LoadDefaultAsset<assets::Material>() );
     }
 }

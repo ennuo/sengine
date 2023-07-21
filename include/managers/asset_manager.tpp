@@ -89,7 +89,10 @@ namespace managers {
 
             return asset;
         }
-        catch (...) { return nullptr; }
+        catch (...) {
+            core::Log::Info("oops!");
+            return nullptr;
+        }
     }
 
     template<typename T>

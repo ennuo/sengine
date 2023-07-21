@@ -2,19 +2,19 @@
 #define SENGINE_ASSET_CREATOR_PRIMITIVE_HPP
 
 #include "core/types.hpp"
-#include "classes/mesh.hpp"
 #include "structs/primitive_type.hpp"
+#include "assets/model.hpp"
 
 namespace classes {
     class Primitive {
     public:
-        static classes::Mesh GetMesh(const structs::PrimitiveType &primitiveType);
-        classes::Mesh GenerateMesh();
+        static Ref<assets::Model> GetModel(const structs::PrimitiveType &primitiveType);
+        Ref<assets::Model> GenerateModel();
     private:
-        Primitive(std::vector<structs::Vertex> vertices, std::vector<GLuint> indices);
+        Primitive(std::vector<structs::Vertex> vertices, std::vector<GLushort> indices);
 
         std::vector<structs::Vertex> vertices;
-        std::vector<GLuint> indices;
+        std::vector<GLushort> indices;
     };
 }
 

@@ -2,9 +2,10 @@
 #define SENGINE_ASSET_CREATOR_TEXTURE_RENDERER_HPP
 
 #include "core/types.hpp"
-#include "classes/mesh.hpp"
 #include "components/component.hpp"
 #include "assets/texture.hpp"
+#include "assets/material.hpp"
+#include "assets/model.hpp"
 
 namespace components {
     class TextureRenderer : public Component {
@@ -21,7 +22,7 @@ namespace components {
     private:
         Ref<assets::Texture> texture;
         Ref<assets::Material> material;
-        classes::Mesh mesh;
+        Ref<assets::Model> model;
     };
 }
 

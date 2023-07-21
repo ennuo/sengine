@@ -1,140 +1,213 @@
-//#include <fstream>
-//#include <iostream>
-//#include <glad.h>
-//#include <assimp/Importer.hpp>
-//#include <assimp/Exporter.hpp>
-//#include <assimp/postprocess.h>
-//
-//#include "core/log.hpp"
-//#include "assets/model.hpp"
-//#include "structs/vertex.hpp"
-//
-//namespace assets {
-//    Model::Model() : Asset(enums::AssetType::Model), scene(nullptr) {
-//        core::Log::Error("poop!");
-//    }
-//
-//    void Model::Load(const std::string &filePath) {
-//        Assimp::Importer importer;
-//        scene = importer.ReadFile(filePath, 0);
-//    }
-//
-//    void Model::Save(const std::string &filePath) {
-//        core::Log::Info("saving");
-//        Assimp::Exporter exporter;
-//        Assimp::ExportProperties *exportProperties = new Assimp::ExportProperties;
-//        const aiExportDataBlob *blob = exporter.ExportToBlob(scene, "ASSBIN", 0u, exportProperties);
-//        delete exportProperties;
-//        if (blob == nullptr) core::Log::Error("failed to export blob for \"{}\"", filePath);
-//
-//        core::Log::Info(std::to_string(blob->size));
-//
-//        std::fstream file;
-//        file.open(filePath, std::ios::binary | std::ios::out | std::ios::trunc);
-//        file.write(reinterpret_cast<const char *>(&blob->data), blob->size);
-//        file.close();
-//        exporter.FreeBlob();
-//    }
-//
-//    void Model::LoadFromFile(const std::string &filePath) {
-//        core::Log::Info("LoadFromFile1");
-//        Assimp::Importer importer;
-//        scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs);
-//        core::Log::Info("LoadFromFile2");
-//        if ((!scene) || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)) core::Log::Error("model assimp error: {}", importer.GetErrorString());
-//        core::Log::Info("LoadFromFile3");
-//        std::string directory = filePath.substr(0, filePath.find_last_of('/'));
-//        ProcessNode(directory, scene->mRootNode);
-//        core::Log::Info("LoadFromFile4");
-//    }
-//
-////    std::vector<std::shared_ptr<assets::Texture>> LoadMaterialTextures(aiMaterial *mat, aiTextureType type,  typeName)
-////    {
-////        vector<Texture> textures;
-////        for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
-////        {
-////            aiString str;
-////            mat->GetTexture(type, i, &str);
-////            Texture texture;
-////            texture.id = TextureFromFile(str.C_Str(), directory);
-////            texture.type = typeName;
-////            texture.path = str;
-////            textures.push_back(texture);
-////        }
-////        return textures;
-////    }
-//
-//    void Model::ProcessNode(const std::string &directory, aiNode *node) {
-//        core::Log::Info("ProcessNode1");
-//        for (int i = 0; i < node->mNumMeshes; i++) {
-//            aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-//            meshes.push_back(ProcessMesh(mesh));
-//        }
-//
-//        core::Log::Info("ProcessNode2");
-//        for (int i = 0; i < node->mNumChildren; i++) {
-//            ProcessNode(directory, node->mChildren[i]);
-//        }
-//    }
-//
-//    classes::Mesh Model::ProcessMesh(aiMesh *mesh) {
-//        // vertices
-//        core::Log::Info("ProcessMesh1");
-//        std::vector<structs::Vertex> vertices;
-//        for (int i = 0; i < mesh->mNumVertices; i++)
-//        {
-//            glm::vec3 position;
-//            position.x = mesh->mVertices[i].x;
-//            position.y = mesh->mVertices[i].y;
-//            position.z = mesh->mVertices[i].z;
-//
-//            glm::vec3 normal;
-//            if (mesh->mNormals != nullptr) {
-//                normal.x = mesh->mNormals[i].x;
-//                normal.y = mesh->mNormals[i].y;
-//                normal.z = mesh->mNormals[i].z;
-//            }
-//
-//            glm::vec2 texCoords;
-//            if (mesh->mTextureCoords[0]) {
-//                texCoords.x = mesh->mTextureCoords[0][i].x;
-//                texCoords.y = mesh->mTextureCoords[0][i].y;
-//            }
-//
-//            vertices.push_back({ position, normal, texCoords });
-//        }
-//
-//        // indices
-//        core::Log::Info("ProcessMesh2");
-//        std::vector<GLuint> indices;
-//        for (int i = 0; i < mesh->mNumFaces; i++)
-//        {
-//            aiFace face = mesh->mFaces[i];
-//            for (int j = 0; j < face.mNumIndices; j++)
-//                indices.push_back(face.mIndices[j]);
-//        }
-//
-//        // textures
-//        core::Log::Info("ProcessMesh3");
-//        std::vector<std::weak_ptr<assets::Texture>> textures;
-////        if (mesh->mMaterialIndex >= 0)
-////        {
-////            aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-////            vector<Texture> diffuseMaps = loadMaterialTextures(material,
-////                                                               aiTextureType_DIFFUSE, "texture_diffuse");
-////            textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-////            vector<Texture> specularMaps = loadMaterialTextures(material,
-////                                                                aiTextureType_SPECULAR, "texture_specular");
-////            textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-////        }
-//
-//        core::Log::Info("ProcessMesh4");
-//        return classes::Mesh(vertices, indices, textures);
-//    }
-//
-//    void Model::Draw(std::weak_ptr<assets::Shader> shader) {
-//        for (auto &mesh : meshes) {
-//            mesh.Draw(shader);
-//        }
-//    }
-//}
+#include <fstream>
+#include <iostream>
+
+#include "assets/model.hpp"
+#include "core/engine.hpp"
+#include "managers/asset_manager.hpp"
+
+#include <assimp/Importer.hpp>
+#include <assimp/Exporter.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
+using structs::Vertex;
+using structs::Bone;
+using structs::Mesh;
+using assets::Material;
+
+namespace assets {
+    Model::Model() : Asset(enums::AssetType::Model),
+    vertices(), indices(), meshes(),
+    VAO(0), VBO(0), EBO(0)
+    {
+    }
+
+    Model::Model(Vec<Vertex> vertices, Vec<GLushort> indices, Ref<Material> material) :
+    Asset(enums::AssetType::Model),
+    vertices(std::move(vertices)), indices(std::move(indices)), meshes(),
+    VAO(0), VBO(0), EBO(0)
+    {
+        meshes.emplace_back(
+                material,
+                0,
+                this->vertices.size(),
+                0,
+                this->indices.size(),
+                GL_TRIANGLES
+        );
+
+        Setup();
+    }
+
+    Model::Model(Vec<Vertex> vertices, Vec<GLushort> indices, Vec<Mesh> meshes) :
+    Asset(enums::AssetType::Model),
+    vertices(std::move(vertices)), indices(std::move(indices)), meshes(std::move(meshes)),
+    VAO(0), VBO(0), EBO(0)
+    {
+        Setup();
+    }
+
+    Model::~Model()
+    {
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }
+
+    void Model::Setup()
+    {
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+        GLsizei vertexSize = sizeof(structs::Vertex);
+        GLsizei verticesSize = static_cast<GLsizei>(vertices.size());
+        glBufferData(GL_ARRAY_BUFFER, verticesSize * vertexSize, &vertices[0], GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(indices.size() * sizeof(GLushort)), &indices[0], GL_STATIC_DRAW);
+
+        // vertex positions
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*) nullptr);
+
+        // vertex normals
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)offsetof(structs::Vertex, normal));
+
+        // vertex texture coords
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertexSize, (void*)offsetof(structs::Vertex, texCoords));
+
+        glBindVertexArray(0);
+    }
+
+    void Model::LoadFromFile(const std::string &filePath)
+    {
+        static auto assetManager = g_Engine->GetManager<managers::AssetManager>();
+
+        Assimp::Importer importer {};
+        const aiScene* scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+        if ((!scene) || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode))
+            core::Log::Error("model assimp error: {}", importer.GetErrorString());
+
+        u32 base = 0;
+        for (s32 i = 0; i < scene->mNumMeshes; ++i)
+        {
+            aiMesh* aMesh = scene->mMeshes[i];
+
+            structs::Mesh primitive {
+                assetManager->LoadDefaultAsset<assets::Material>(),
+                static_cast<s32>(base),
+                static_cast<s32>(aMesh->mNumVertices),
+                static_cast<s32>(indices.size()),
+                static_cast<s32>(aMesh->mNumFaces * 3),
+                GL_TRIANGLES
+            };
+
+            for (s32 j = 0; j < aMesh->mNumVertices; ++j)
+            {
+                structs::Vertex vertex {};
+                std::memcpy(&vertex.position, &aMesh->mVertices[j], sizeof(vec3));
+                if (aMesh->HasNormals())
+                    std::memcpy(&vertex.normal, &aMesh->mNormals[j], sizeof(vec3));
+                if (aMesh->HasTextureCoords(0))
+                    std::memcpy(&vertex.texCoords, &aMesh->mTextureCoords[0][j], sizeof(vec2));
+                vertices.push_back(vertex);
+            }
+
+            for (s32 j = 0; j < aMesh->mNumFaces; ++j)
+            {
+                aiFace face = aMesh->mFaces[j];
+                for (s32 k = 0; k < face.mNumIndices; ++k)
+                    indices.push_back(base + face.mIndices[k]);
+            }
+
+            meshes.push_back(primitive);
+            base += aMesh->mNumVertices;
+        }
+
+        Setup();
+    }
+
+    void Model::Load(const std::string &filePath)
+    {
+        static auto assetManager = g_Engine->GetManager<managers::AssetManager>();
+
+        std::fstream file;
+        file.open(filePath, std::ios::binary | std::ios::in);
+
+        ReadAssetInfo(file);
+
+        u32 vertexCount, indexCount, primitiveCount, boneCount;
+
+        file.read(reinterpret_cast<char *>(&vertexCount), sizeof(u32));
+        file.read(reinterpret_cast<char *>(&indexCount), sizeof(u32));
+        file.read(reinterpret_cast<char *>(&primitiveCount), sizeof(u32));
+        file.read(reinterpret_cast<char *>(&boneCount), sizeof(u32));
+
+        vertices.resize(vertexCount);
+        indices.resize(indexCount);
+        meshes.resize(primitiveCount);
+
+        file.read(reinterpret_cast<char *>(vertices.data()), sizeof(structs::Vertex) * vertexCount);
+        file.read(reinterpret_cast<char *>(indices.data()), sizeof(GLuint) * indexCount);
+
+        structs::Mesh primitive;
+        Guid guid;
+        for (u32 index = 0; index < primitiveCount; ++index)
+        {
+            file.read(reinterpret_cast<char *>(&guid), sizeof(Guid));
+            primitive.material = guid.isValid() ?
+                    assetManager->LoadAsset<assets::Material>(guid) :
+                    assetManager->LoadDefaultAsset<assets::Material>();
+
+            file.read(reinterpret_cast<char *>(&primitive.firstVertex), sizeof(s32));
+            file.read(reinterpret_cast<char *>(&primitive.vertexCount), sizeof(s32));
+            file.read(reinterpret_cast<char *>(&primitive.indexStart), sizeof(s32));
+            file.read(reinterpret_cast<char *>(&primitive.indexCount), sizeof(s32));
+            file.read(reinterpret_cast<char *>(&primitive.primitiveType), sizeof(GLenum));
+
+            meshes[index] = primitive;
+        }
+
+        Setup();
+    }
+
+    void Model::Save(const std::string &filePath)
+    {
+        std::fstream file;
+        file.open(filePath, std::ios::binary | std::ios::out | std::ios::trunc);
+        WriteAssetInfo(file);
+
+        u32 vertexCount = vertices.size();
+        u32 indexCount = indices.size();
+        u32 primitiveCount = meshes.size();
+        u32 boneCount = 0;
+
+        file.write(reinterpret_cast<const char *>(&vertexCount), sizeof(u32));
+        file.write(reinterpret_cast<const char *>(&indexCount), sizeof(u32));
+        file.write(reinterpret_cast<const char *>(&primitiveCount), sizeof(u32));
+        file.write(reinterpret_cast<const char *>(&boneCount), sizeof(u32));
+
+        file.write(reinterpret_cast<const char *>(vertices.data()), sizeof(structs::Vertex) * vertexCount);
+        file.write(reinterpret_cast<const char *>(indices.data()), sizeof(GLushort) * indexCount);
+
+        static Guid empty {};
+        for (const auto& primitive : meshes)
+        {
+            Guid guid = primitive.material != nullptr ? primitive.material->GetGuid() : empty;
+            file.write(reinterpret_cast<const char *>(&guid), sizeof(Guid));
+            file.write(reinterpret_cast<const char *>(&primitive.firstVertex), sizeof(s32));
+            file.write(reinterpret_cast<const char *>(&primitive.vertexCount), sizeof(s32));
+            file.write(reinterpret_cast<const char *>(&primitive.indexStart), sizeof(s32));
+            file.write(reinterpret_cast<const char *>(&primitive.indexCount), sizeof(s32));
+            file.write(reinterpret_cast<const char *>(&primitive.primitiveType), sizeof(GLenum));
+        }
+
+        file.close();
+    }
+}
