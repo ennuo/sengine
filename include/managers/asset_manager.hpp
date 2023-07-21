@@ -1,13 +1,11 @@
 #ifndef SENGINE_ASSET_CREATOR_ASSET_MANAGER_HPP
 #define SENGINE_ASSET_CREATOR_ASSET_MANAGER_HPP
 
-#include <memory>
 #include <unordered_map>
-#include <crossguid/guid.hpp>
 #include <typeindex>
 #include <typeinfo>
-#include <utility>
-#include <vector>
+
+#include "core/types.hpp"
 
 #include "enums/asset_type.hpp"
 #include "managers/manager.hpp"
@@ -18,80 +16,75 @@
 #include "assets/shader.hpp"
 #include "assets/sound.hpp"
 #include "assets/texture.hpp"
+#include "assets/asset_database.hpp"
 
-const std::string DEFAULT_ASSET_NAME = ".default";
+const string DEFAULT_ASSET_NAME = ".default";
 
 namespace managers {
     class AssetManager : public Manager {
     public:
-        struct AssetData {
-            xg::Guid guid;
-            enums::AssetType assetType;
-            mutable std::shared_ptr<assets::Asset> pointer;
-            std::string name;
-            std::string path;
+        struct AssetInstance {
+            string path, name;
+            Guid guid;
+            enums::AssetType type;
+            WeakRef<assets::Asset> ref;
         };
 
         AssetManager();
         ~AssetManager();
 
-        template<typename T>
-        static std::string GetAssetPath(const std::string &name);
-        static std::string GetAssetPath(const std::string &folderName, const std::string &name);
+        inline void RemoveFromAssetList(const Guid &guid)
+        {
+            if (assets.erase(guid))
+            {
+                core::Log::Info(fmt::format("unloaded asset w/ guid \"{}\"", guid.str()));
+            }
+        }
 
         template<typename T>
-        bool AssetExists(const std::string &name, bool mustBeLoaded = true);
-        bool AssetExists(const std::string &path, bool mustBeLoaded = true);
-        bool AssetExists(const xg::Guid &guid, bool mustBeLoaded = true);
-
-        bool AssetIsLoaded(const xg::Guid &guid);
+        static string GetAssetPath(const string &name);
+        static string GetAssetPath(const string &folderName, const string &name);
 
         template<typename T>
-        std::weak_ptr<T> GetAsset(const std::string &name);
-        std::weak_ptr<assets::Asset> GetAsset(const xg::Guid &guid);
+        bool AssetExists(const string &name);
+        bool AssetExists(const string &path);
+        bool AssetExists(const Guid &guid);
+
+        enums::AssetType GetAssetType(const Guid &guid);
+        string GetAssetName(const Guid &guid);
+        string GetAssetPath(const Guid &guid);
 
         template<typename T>
-        std::shared_ptr<T> GetAssetOrDefault(const std::string &name);
+        Ref<T> LoadDefaultAsset();
 
         template<typename T>
-        std::shared_ptr<T> GetAssetOrDefault(std::weak_ptr<T> assetPtr);
-
-        enums::AssetType AssetGetType(const xg::Guid &guid);
-        std::string AssetGetName(const xg::Guid &guid);
-        std::string AssetGetPath(const xg::Guid &guid);
+        Ref<T> LoadAssetByPath(const string &path);
+        template<typename T>
+        Ref<T> LoadAsset(const string &name);
+        template<typename T>
+        Ref<T> LoadAsset(const Guid &guid);
 
         template<typename T>
-        std::vector<xg::Guid> GetAssetGuids();
-        std::vector<xg::Guid> GetAssetGuids(enums::AssetType assetType);
-        std::vector<xg::Guid> GetAllAssetGuids();
+        Ref<T> LoadAssetOrDefault(const string &name);
+        template<typename T>
+        Ref<T> LoadAssetOrDefault(const Guid &guid);
 
         template<typename T>
-        std::weak_ptr<T> GetDefaultAsset();
-
-        template<typename T>
-        bool LoadAsset(const std::string &name);
-        void UnLoadAsset(const xg::Guid &guid);
-
-        template<typename T>
-        void ReLoadAsset(const xg::Guid &guid);
+        void ReloadAsset(const Guid &guid);
 
         void LoadDefaultAssets();
+
     private:
-        std::unordered_map<xg::Guid, AssetData> assets;
+        std::unordered_map<Guid, AssetInstance> assets;
+        std::array<Ref<assets::Asset>, enums::ASSET_TYPE_SIZE> defaults;
 
         template<typename T>
         static void AssertTemplateIsAsset();
 
         template<typename T>
-        bool LoadDefaultAsset();
-
-        template<typename T>
-        const AssetData &GetAssetData(const std::string &name);
-        const AssetData &GetAssetData(const std::string &path);
-        const AssetData &GetAssetData(const xg::Guid &guid);
-
-        void RegisterAsset(const AssetData &assetData);
-        void DeRegisterAsset(const xg::Guid &guid);
+        const AssetInstance &FindAsset(const string &name);
+        const AssetInstance &FindAsset(const string &path);
+        const AssetInstance &FindAsset(const Guid &guid);
     };
 }
 

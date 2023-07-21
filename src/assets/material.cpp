@@ -35,6 +35,10 @@ namespace assets {
         file.open(filePath, std::ios::binary | std::ios::out | std::ios::trunc);
         WriteAssetInfo(file);
 
+        file.write(reinterpret_cast<const char *>(&flags), sizeof(u32));
+
+
+
 
         file.close();
     }

@@ -11,131 +11,129 @@
 
 namespace managers {
     template<typename T>
-    std::string AssetManager::GetAssetPath(const std::string &name) {
+    string AssetManager::GetAssetPath(const string &name) 
+    {
         AssertTemplateIsAsset<T>();
 
-        static std::unordered_map<std::type_index, std::string> assetFolderNames = {
+        static std::unordered_map<std::type_index, string> assetFolderNames = {
                 { typeid(assets::Font), "font" },
                 { typeid(assets::Material), "material" },
                 { typeid(assets::Model), "model" },
                 { typeid(assets::Shader), "shader" },
                 { typeid(assets::Sound), "sound" },
-                { typeid(assets::Texture), "texture" }
+                { typeid(assets::Texture), "texture" },
+                { typeid(assets::AssetDatabase), "assetdb" }
         };
 
         auto find = assetFolderNames.find(typeid(T));
         if (find == assetFolderNames.end()) throw exceptions::InvalidTemplate(fmt::format("type \"{}\" doesn't exist in AssetManager::AssetFolderNames", typeid(T).name()));
 
-        std::string folderName = find->second;
+        string folderName = find->second;
         return GetAssetPath(folderName, name);
     }
 
     template<typename T>
-    bool AssetManager::AssetExists(const std::string &name, bool mustBeLoaded) {
+    bool AssetManager::AssetExists(const string &name)
+    {
         AssertTemplateIsAsset<T>();
 
-        std::string path = GetAssetPath<T>(name);
-        return AssetExists(path, mustBeLoaded);
+        string path = GetAssetPath<T>(name);
+        return AssetExists(path);
     }
 
     template<typename T>
-    std::weak_ptr<T> AssetManager::GetAsset(const std::string &name) {
-        AssertTemplateIsAsset<T>();
+    Ref<T> AssetManager::LoadAssetOrDefault(const Guid &guid)
+    {
+        auto asset = LoadAsset<T>(guid);
+        if (asset != nullptr) return asset;
+        return LoadDefaultAsset<T>();
+    }
 
-        enums::AssetType assetType = utils::GetAssetType<T>();
+    template<typename T>
+    Ref<T> AssetManager::LoadAssetOrDefault(const string &name)
+    {
+        auto asset = LoadAsset<T>(name);
+        if (asset != nullptr) return asset;
+        return LoadDefaultAsset<T>();
+    }
 
-        std::unordered_map<xg::Guid, AssetData>::iterator iterator;
-        for (iterator = assets.begin(); iterator != assets.end(); ++iterator) {
-            AssetData assetData = iterator->second;
-            if ((assetData.assetType != assetType) || (assetData.name != name)) continue;
-            if (assetData.pointer == nullptr) break;
-
-            return std::weak_ptr<T>(std::static_pointer_cast<T>(assetData.pointer));
+    template<typename T>
+    Ref<T> AssetManager::LoadAssetByPath(const string &path)
+    {
+        if (AssetExists(path))
+        {
+            auto& asset = FindAsset(path);
+            return std::static_pointer_cast<T>(asset.ref.lock());
         }
 
-        return std::weak_ptr<T>();
-    }
-
-    template<typename T>
-    std::shared_ptr<T> AssetManager::GetAssetOrDefault(const std::string &name) {
-        auto assetPtr = GetAsset<T>(name);
-        if (auto lock = assetPtr.lock()) return lock;
-
-        static auto assetManager = g_Engine->GetManager<managers::AssetManager>();
-        auto defaultAsset = assetManager->GetDefaultAsset<T>();
-        return defaultAsset.lock();
-    }
-
-    template<typename T>
-    std::shared_ptr<T> AssetManager::GetAssetOrDefault(std::weak_ptr<T> assetPtr) {
-        if (auto lock = assetPtr.lock()) return lock;
-
-        static auto assetManager = g_Engine->GetManager<managers::AssetManager>();
-        auto defaultAsset = assetManager->GetDefaultAsset<T>();
-        return defaultAsset.lock();
-    }
-
-    template<typename T>
-    std::vector<xg::Guid> AssetManager::GetAssetGuids() {
-        AssertTemplateIsAsset<T>();
-
-        enums::AssetType assetType = utils::GetAssetType<T>();
-        return GetAssetGuids(assetType);
-    }
-
-    template<typename T>
-    std::weak_ptr<T> AssetManager::GetDefaultAsset() {
-        AssertTemplateIsAsset<T>();
-
-        return GetAsset<T>(DEFAULT_ASSET_NAME);
-    }
-
-    template<typename T>
-    bool AssetManager::LoadAsset(const std::string &name) {
-        AssertTemplateIsAsset<T>();
-
-        std::string path = GetAssetPath<T>(name);
-        if (AssetExists(path, true)) return true;
-
-        if (!std::filesystem::exists(path)) {
+        if (!std::filesystem::exists(path))
+        {
             core::Log::Warn(fmt::format("tried to load asset from \"{}\", but the file doesn't exist", path));
-            return false;
+            return nullptr;
         }
 
-        std::shared_ptr<T> asset = nullptr;
-        try {
+        try
+        {
             core::Log::Info(fmt::format("loading asset from \"{}\"", path));
 
-            asset = std::make_shared<T>();
+            auto asset = std::make_shared<T>();
             asset->Load(path);
-        } catch (...) {
-            asset = nullptr;
+
+            assets[asset->GetGuid()] = {
+                    path,
+                    "",
+                    asset->GetGuid(),
+                    utils::GetAssetType<T>(),
+                    std::weak_ptr<T>(asset)
+            };
+
+            return asset;
         }
-
-        if (asset == nullptr) return false;
-
-        if (AssetExists(path, false)) {
-            const AssetData &assetData = GetAssetData(path);
-            assetData.pointer = asset;
-        } else {
-            enums::AssetType assetType = utils::GetAssetType<T>();
-            AssetData assetData = AssetData{ asset->GetGuid(), assetType, asset, name, path };
-            RegisterAsset(assetData);
-        }
-
-        return true;
+        catch (...) { return nullptr; }
     }
 
     template<typename T>
-    bool AssetManager::LoadDefaultAsset() {
-        return LoadAsset<T>(DEFAULT_ASSET_NAME);
+    Ref<T> AssetManager::LoadAsset(const Guid &guid)
+    {
+        AssertTemplateIsAsset<T>();
+        if (AssetExists(guid))
+        {
+            return std::static_pointer_cast<T>(assets[guid].ref.lock());
+        }
+
+        auto database = LoadDefaultAsset<assets::AssetDatabase>();
+        if (database != nullptr && database->ContainsAsset(guid))
+        {
+            return LoadAssetByPath<T>(database->GetAssetPath(guid));
+        }
+
+        return nullptr;
     }
 
     template<typename T>
-    void AssetManager::ReLoadAsset(const xg::Guid &guid) {
-        const AssetData &assetData = GetAssetData(guid);
-        UnLoadAsset(guid);
-        LoadAsset<T>(assetData.name);
+    Ref<T> AssetManager::LoadAsset(const string &name) {
+        AssertTemplateIsAsset<T>();
+
+        string path = GetAssetPath<T>(name);
+        return LoadAssetByPath<T>(path);
+    }
+
+    template<typename T>
+    Ref<T> AssetManager::LoadDefaultAsset() {
+        auto asset = LoadAsset<T>(DEFAULT_ASSET_NAME);
+
+        auto type = utils::GetAssetType<T>();
+        defaults[static_cast<s32>(type)] = asset;
+
+        return asset;
+    }
+
+    template<typename T>
+    void AssetManager::ReloadAsset(const Guid &guid)
+    {
+        // TODO: Implement this
+        // should be able to reload the resource without
+        // destructing / constructing a new pointer!
     }
 
     template<typename T>
@@ -146,11 +144,9 @@ namespace managers {
     }
 
     template<typename T>
-    const AssetManager::AssetData &AssetManager::GetAssetData(const std::string &name) {
+    const AssetManager::AssetInstance &AssetManager::FindAsset(const string &name) {
         AssertTemplateIsAsset<T>();
-
-        std::string path = GetAssetPath<T>(name);
-        return GetAssetData(path);
+        return GetAssetData(GetAssetPath<T>(name));
     }
 }
 

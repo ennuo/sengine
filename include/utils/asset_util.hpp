@@ -12,6 +12,7 @@
 #include "assets/shader.hpp"
 #include "assets/sound.hpp"
 #include "assets/texture.hpp"
+#include "assets/asset_database.hpp"
 
 const std::unordered_map<std::type_index, enums::AssetType> ASSET_ASSET_TYPES = {
         { typeid(assets::Font), enums::AssetType::Font },
@@ -19,7 +20,8 @@ const std::unordered_map<std::type_index, enums::AssetType> ASSET_ASSET_TYPES = 
         { typeid(assets::Model), enums::AssetType::Model },
         { typeid(assets::Shader), enums::AssetType::Shader },
         { typeid(assets::Sound), enums::AssetType::Sound },
-        { typeid(assets::Texture), enums::AssetType::Texture }
+        { typeid(assets::Texture), enums::AssetType::Texture },
+        { typeid(assets::AssetDatabase), enums::AssetType::AssetDatabase }
 };
 
 namespace utils {

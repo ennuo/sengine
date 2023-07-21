@@ -19,9 +19,10 @@ namespace assets {
 
         virtual void Save(const std::string &filePath) = 0;
         virtual void Load(const std::string &filePath) = 0;
+        virtual void Clear() {};
 
-        structs::AssetInfo GetAssetInfo();
-        xg::Guid GetGuid();
+        inline structs::AssetInfo GetAssetInfo() const { return assetInfo; };
+        inline xg::Guid GetGuid() { return assetInfo.GetGuid(); };
     protected:
         void WriteAssetInfo(std::fstream &file);
         void ReadAssetInfo(std::fstream &file);

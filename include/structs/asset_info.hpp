@@ -6,11 +6,14 @@
 #include <algorithm>
 
 #include "enums/asset_type.hpp"
+#include "enums/asset_revision.hpp"
 #include "core/log.hpp"
 
 extern const size_t ASSET_INFO_BYTES;
 extern const char *ASSET_INFO_SIGNATURE;
 extern const unsigned short ASSET_INFO_VERSION;
+extern const enums::AssetRevision ASSET_INFO_REVISION;
+
 
 typedef std::array<unsigned char, 16> AssetInfoGuid;
 
@@ -18,6 +21,7 @@ namespace structs {
     struct AssetInfo {
         enums::AssetType assetType;
         AssetInfoGuid guid;
+        enums::AssetRevision revision = ASSET_INFO_REVISION;
 
         xg::Guid GetGuid() {
             return xg::Guid(guid);
@@ -59,6 +63,7 @@ namespace structs {
 
             enums::AssetType assetType;
             AssetInfoGuid guid;
+            enums::AssetRevision revision;
             switch (version) {
                 case 1: {
                     size_t assetTypeSize = sizeof(enums::AssetType);
@@ -68,6 +73,11 @@ namespace structs {
                     size_t guidSize = sizeof(AssetInfoGuid);
                     std::memcpy(&guid, currentPtr, guidSize);
                     currentPtr += guidSize;
+
+                    size_t revisionSize = sizeof(enums::AssetRevision);
+                    std::memcpy(&revision, currentPtr, revisionSize);
+                    currentPtr += revisionSize;
+
                     break;
                 }
 
@@ -76,7 +86,7 @@ namespace structs {
                 }
             }
 
-            return { assetType, guid };
+            return { assetType, guid, revision };
         }
     };
 }
