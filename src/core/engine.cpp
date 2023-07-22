@@ -211,12 +211,12 @@ namespace core {
                     Update(deltaTime);
 
                     // Render
-                    glDisable(GL_DEPTH_TEST);
-                    glDisable(GL_CULL_FACE);
+                    glEnable(GL_STENCIL_TEST);
+                    glEnable(GL_DEPTH_TEST);
 
                     glViewport(0, 0, windowWidth, windowHeight);
                     glClearColor(clearColour.r, clearColour.g, clearColour.b, clearColour.a);
-                    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+                    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
                     // setup imgui frame
                     ImGui_ImplOpenGL3_NewFrame();

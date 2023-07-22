@@ -22,6 +22,7 @@ namespace assets {
     class Material : public Asset {
     public:
         Material();
+        Material(Ref<Shader> shader, Ref<Texture> texture);
 
         void Save(const string &filePath) override;
         void Load(const string &filePath) override;

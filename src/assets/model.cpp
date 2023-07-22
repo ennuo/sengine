@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
 
 #include "assets/model.hpp"
 #include "core/engine.hpp"
@@ -90,9 +91,56 @@ namespace assets {
         static auto assetManager = g_Engine->GetManager<managers::AssetManager>();
 
         Assimp::Importer importer {};
-        const aiScene* scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+        const aiScene* scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
         if ((!scene) || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode))
             core::Log::Error("model assimp error: {}", importer.GetErrorString());
+
+        // TODO: Fixup materials that use the same textures
+
+        Vec<Ref<Material>> materials {};
+        for (s32 i = 0; i < scene->mNumMaterials; ++i)
+        {
+            aiMaterial* aMaterial = scene->mMaterials[i];
+
+            u32 textureCount = aMaterial->GetTextureCount(aiTextureType_DIFFUSE);
+            if (textureCount == 0)
+            {
+                materials.push_back(assetManager->LoadDefaultAsset<Material>());
+                continue;
+            }
+
+            aiString textureName;
+            aMaterial->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), textureName);
+
+            Ref<Texture> texture = nullptr;
+            if (auto aTexture = scene->GetEmbeddedTexture(textureName.C_Str()))
+            {
+                // If height is 0, then apparently it's a compressed texture?
+                if (aTexture->mHeight == 0)
+                {
+                    texture = std::make_shared<Texture>();
+                    texture->LoadFromCompressedData(reinterpret_cast<unsigned char *>(aTexture->pcData), aTexture->mWidth);
+                }
+                else
+                {
+                    u32 dataSize = aTexture->mWidth * aTexture->mHeight * 4;
+                    auto data = new unsigned char[dataSize];
+                    std::memcpy(data, aTexture->pcData, dataSize);
+                    texture = std::make_shared<Texture>(data, enums::TextureType::BGRA, aTexture->mWidth, aTexture->mHeight);
+                }
+            }
+            else
+            {
+                std::string directory = filePath.substr(0, filePath.find_last_of('/'));
+                std::string texturePath = directory + "/" + textureName.C_Str();
+
+                texture = std::make_shared<Texture>();
+                texture->LoadFromFile(texturePath);
+            }
+
+            auto shader = assetManager->LoadDefaultAsset<Shader>();
+            materials.push_back(std::make_shared<Material>(shader, texture));
+        }
 
         u32 base = 0;
         for (s32 i = 0; i < scene->mNumMeshes; ++i)
@@ -100,7 +148,7 @@ namespace assets {
             aiMesh* aMesh = scene->mMeshes[i];
 
             structs::Mesh primitive {
-                assetManager->LoadDefaultAsset<assets::Material>(),
+                materials[aMesh->mMaterialIndex],
                 static_cast<s32>(base),
                 static_cast<s32>(aMesh->mNumVertices),
                 static_cast<s32>(indices.size()),

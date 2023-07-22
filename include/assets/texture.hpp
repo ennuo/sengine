@@ -9,7 +9,8 @@
 namespace enums {
     enum class TextureType
     {
-        RGBA = 0
+        RGBA = 0,
+        BGRA = 1
     };
 
     enum class TextureFlags
@@ -22,12 +23,14 @@ namespace enums {
 namespace assets {
     class Texture : public Asset {
     public:
+        Texture(unsigned char* data, enums::TextureType type, s32 width, s32 height);
         Texture();
         ~Texture();
 
         void Save(const string &filePath) override;
         void Load(const string &filePath) override;
         void LoadFromFile(const string &filePath);
+        void LoadFromCompressedData(unsigned char *buffer, s32 len);
 
         inline s32 GetWrapU() const { return wrapU; }
         inline s32 GetWrapV() const { return wrapV; }

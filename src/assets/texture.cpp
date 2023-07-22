@@ -7,8 +7,17 @@
 #include "enums/asset_type.hpp"
 
 namespace assets {
+    Texture::Texture(unsigned char* data, enums::TextureType type, s32 width, s32 height) :
+    Asset(enums::AssetType::Texture),
+    data(data), width(width), height(height), wrapU(GL_REPEAT), wrapV(GL_REPEAT),
+    type(static_cast<u32>(type)), flags(static_cast<u32>(enums::TextureFlags::None))
+    {
+        dataSize = width * height * 4;
+        BindTexture();
+    }
+
     Texture::Texture() : Asset(enums::AssetType::Texture),
-    width(0), height(0), wrapU(GL_CLAMP_TO_EDGE), wrapV(GL_CLAMP_TO_EDGE),
+    width(0), height(0), wrapU(GL_REPEAT), wrapV(GL_REPEAT),
     data(nullptr), dataSize(0), textureId(0),
     type(static_cast<u32>(enums::TextureType::RGBA)),
     flags(static_cast<u32>(enums::TextureFlags::None))
@@ -77,6 +86,20 @@ namespace assets {
         int totalChannels;
         data = stbi_load(filePath.c_str(), &width, &height, &totalChannels, 0);
         dataSize = (width * height * totalChannels);
+
+        BindTexture();
+    }
+
+    void Texture::LoadFromCompressedData(unsigned char *buffer, s32 len)
+    {
+        stbi_set_flip_vertically_on_load(true);
+
+        int totalChannels;
+        data = stbi_load_from_memory(buffer, len, &width, &height, &totalChannels, 0);
+
+        dataSize = (width * height * totalChannels);
+
+        BindTexture();
     }
 
     void Texture::BindTexture() {
@@ -90,7 +113,20 @@ namespace assets {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapU);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapV);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        auto texType = static_cast<enums::TextureType>(type);
+        switch (texType)
+        {
+            case enums::TextureType::RGBA:
+            {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+                break;
+            }
+            case enums::TextureType::BGRA:
+            {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+                break;
+            }
+        }
 
         glBindTexture(GL_TEXTURE_2D, 0);
     }

@@ -4,21 +4,30 @@
 namespace core {
     EntityId Entity::Id = 0;
 
-    Entity::Entity() : position({0, 0, 0}), scale(1.0f, 1.0f, 1.0f), id(Id++), frontVector(0.0f, 0.0f, -1.0f), upVector(0.0f, 1.0f, 0.0f) { }
-    Entity::~Entity() { };
+    void Entity::Translate(const vec3 &trans) {
+        translation += (trans.x * forward);
+        translation += (trans.y * up);
+        translation += (trans.z * right);
 
-    void Entity::Move(const glm::vec2 &moveVector) {
-        if (moveVector.x != 0) {
-            position += (moveVector.x * glm::normalize(glm::cross(frontVector, upVector)));
-        }
-
-        if (moveVector.y != 0) {
-            position += (moveVector.y * frontVector);
-        }
+        UpdateGlobalSpace();
     }
 
-    EntityId Entity::GetEntityId() const {
-        return id;
+    void Entity::Rotate(const vec3 &rot)
+    {
+        glm::quat q { glm::radians(rot) };
+        rotation = q * rotation;
+
+        UpdateGlobalSpace();
+    }
+
+    void Entity::UpdateGlobalSpace()
+    {
+        transform = glm::translate(glm::mat4(1.0f), translation) *
+                    glm::toMat4(rotation) *
+                    glm::scale(glm::mat4(1.0f), scale);
+        forward = rotation * vec3(0.0, 0.0, -1.0);
+        up = rotation * vec3(0.0, 1.0, 0.0);
+        right = rotation * vec3(1.0, 0.0, 0.0);
     }
 
     void Entity::PreUpdate(double deltaTime) {

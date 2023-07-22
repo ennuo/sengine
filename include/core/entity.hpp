@@ -1,13 +1,10 @@
 #ifndef SENGINE_ENTITY_H
 #define SENGINE_ENTITY_H
 
-#include <vector>
-#include <map>
 #include <typeindex>
 #include <typeinfo>
-#include <utility>
-#include <glm/glm.hpp>
 
+#include "core/types.hpp"
 #include "components/component.hpp"
 
 typedef unsigned long EntityId;
@@ -15,16 +12,54 @@ typedef unsigned long EntityId;
 namespace core {
     class Entity {
     public:
-        Entity();
-        virtual ~Entity();
+        inline Entity() :
+        translation(), scale(1.0f), rotation(),
+        id(Id++),
+        forward(0.0f, 0.0f, -1.0f),
+        up(0.0f, 1.0f, 0.0f),
+        right(1.0f, 0.0f, 0.0f),
+        transform(1.0f)
+        {
+        }
 
-        glm::vec3 position;
-        glm::vec3 scale;
+        inline virtual ~Entity() {}
 
-        void Move(const glm::vec2 &moveVector);
-        void Rotate(const glm::vec2 &rotationVector);
+        inline vec3 GetTranslation() { return translation; }
+        inline quat GetRotation() { return rotation; }
+        inline vec3 GetScale() { return scale; }
 
-        EntityId GetEntityId() const;
+        inline vec3 GetForward() { return forward; }
+        inline vec3 GetUp() { return up; }
+        inline vec3 GetRight() { return right; }
+
+        inline mat4 GetTransform() { return transform; }
+
+        // NOTE: I don't really like Getters/Setters for the translation
+        // but the matrix and direction vectors being updated is important.
+        // #WheresStoozey
+        
+        inline void SetTranslation(vec3 t)
+        {
+            translation = t;
+            UpdateGlobalSpace();
+        }
+
+        inline void SetRotation(quat r)
+        {
+            rotation = r;
+            UpdateGlobalSpace();
+        }
+
+        inline void SetScale(vec3 s)
+        {
+            scale = s;
+            UpdateGlobalSpace();
+        }
+
+        void Translate(const vec3 &trans);
+        void Rotate(const vec3 &rot);
+
+        inline EntityId GetEntityId() const { return id; }
 
         template<typename T>
         bool HasComponent();
@@ -33,7 +68,7 @@ namespace core {
         void AddComponent();
 
         template<typename T>
-        std::shared_ptr<T> GetComponent();
+        Ref<T> GetComponent();
 
         virtual void PreUpdate(double deltaTime);
         virtual void Update(double deltaTime);
@@ -45,8 +80,17 @@ namespace core {
     protected:
         static EntityId Id;
 
-        glm::vec3 frontVector;
-        glm::vec3 upVector;
+        vec3 translation;
+        quat rotation;
+        vec3 scale;
+
+        vec3 forward;
+        vec3 up;
+        vec3 right;
+
+        mat4 transform;
+
+        void UpdateGlobalSpace();
 
         void UpdateComponents(void(components::Component::*func)(double), double deltaTime);
         void RenderComponents(void(components::Component::*func)());

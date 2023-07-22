@@ -10,6 +10,12 @@ namespace assets {
     {
     }
 
+    Material::Material(Ref<Shader> shader, Ref<Texture> texture) :  Asset(enums::AssetType::Material),
+    flags(static_cast<u32>(enums::MaterialFlags::None)), textures(), shader(std::move(shader))
+    {
+        textures[0] = std::move(texture);
+    }
+
     void Material::Load(const string &filePath)
     {
         static auto assetManager = g_Engine->GetManager<managers::AssetManager>();

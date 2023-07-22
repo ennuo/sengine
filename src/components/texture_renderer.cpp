@@ -15,6 +15,7 @@ namespace components {
     {
         if (material == nullptr) return;
 
+        glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -23,11 +24,9 @@ namespace components {
 
         auto shader = material->GetShader();
 
-        mat4 translation = glm::translate(glm::mat4(1.0f), entity->position);
-        mat4 scale = glm::scale(glm::mat4(1.0f), entity->scale);
         auto perspective = glm::perspective(glm::radians(90.0f), static_cast<float>(g_Engine->GetWindowWidth()) / static_cast<float>(g_Engine->GetWindowHeight()), 0.1f, 3.0f);
 
-        shader->SetUniform("u_modelMatrix", (translation * scale));
+        shader->SetUniform("u_modelMatrix", entity->GetTransform());
         shader->SetUniform("u_projection", perspective);
 
         model->Bind();
@@ -39,6 +38,7 @@ namespace components {
         glBindVertexArray(0);
         glUseProgram(0);
 
+        glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
     }
 
